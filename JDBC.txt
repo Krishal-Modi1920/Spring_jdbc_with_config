@@ -1,0 +1,550 @@
+password = root
+
+Queries
+
+1) show databases;
+2) create database springjdbc;
+3) use springjdbc;
+4) create table student(id int primary key , name varchar(100) not null, city varchar(200));
+5) show tables;
+6) insert into student(id, name, city) values(171, 'Krishal', 'Ahmedabad');
+7) select * from student;
+
+
+**) pom.xml
+
+  <dependencies>
+	    
+	    <dependency>
+	      <groupId>junit</groupId>
+	      <artifactId>junit</artifactId>
+	      <version>3.8.1</version>
+	      <scope>test</scope>
+	    </dependency>
+	    
+    	<!-- https://mvnrepository.com/artifact/org.springframework/spring-core -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>6.2.1</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.springframework/spring-context -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>6.2.1</version>
+        </dependency>
+    
+    	<!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc -->
+		<dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-jdbc</artifactId>
+		    <version>6.2.1</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.mysql/mysql-connector-j -->
+		<dependency>
+		    <groupId>mysql</groupId>
+		    <artifactId>mysql-connector-java</artifactId>
+		    <version>8.0.30</version>
+		</dependency>
+  </dependencies>
+
+***********************************************************************************************************************************
+Taking the data from java file (CRUD)
+
+1) First Package com.spring.jdbc
+
+**) App.java
+
+package com.spring.jdbc;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.jdbc.core.JdbcTemplate;
+import com.spring.jdbc.dao.StudentDao;
+import com.spring.jdbc.entities.Student; 
+/*
+ * 
+ * Everytime Enter Some new Name otherwise it will prompt an error 
+ * Hello world!
+ */
+public class App 
+{
+    public static void main( String[] args )
+    {
+        System.out.println( "My Program Started.........." );
+        // spring jdbc => JDBC Template
+        ApplicationContext context = new ClassPathXmlApplicationContext("com/spring/jdbc/config.xml");
+        StudentDao studentDao = context.getBean("studentDao",StudentDao.class);
+        
+        
+//        // Insert   
+//        Student student = new Student();
+//        student.setId(147);
+//        student.setName("Aditya Lathiya");
+//        student.setCity("Amreli");       
+//        
+//        int result = studentDao.insert(student);
+//        System.out.println("student added " + result);
+
+        
+        
+//        // Update
+//        Student student = new Student();
+//        student.setId(466);
+//        student.setName("Vasif Peerji");
+//        student.setCity("Jamnagar");
+//        
+//        int result = studentDao.change(student);
+//        System.out.println("Data Changed " + result);
+
+    
+        // Delete 
+        int result = studentDao.delete(476);
+        System.out.println("Data Deleted: " + result);
+        
+    }
+}
+
+
+
+**) config.xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:c="http://www.springframework.org/schema/c"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!-- Updated DataSource Bean with the new driver class -->
+    <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource" name="ds">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"></property> <!-- Updated driver class -->
+        <property name="url" value="jdbc:mysql://localhost:3306/springjdbc?serverTimezone=UTC"></property> <!-- Added timezone parameter -->
+        <property name="username" value="root"></property>
+        <property name="password" value="root"></property>
+    </bean>
+    
+    <bean class="org.springframework.jdbc.core.JdbcTemplate" name="jdbcTemplate">
+        <property name="dataSource">
+            <ref bean="ds" />
+        </property>
+    </bean>
+    
+    <bean class="com.spring.jdbc.dao.StudentDaoImpl" name="studentDao">
+        <!-- Corrected ref attribute -->
+        <property name="jdbcTemplate" ref="jdbcTemplate" /> 
+    </bean>
+    
+</beans>
+
+
+
+2) Second Package com.spring.jdbc.dao
+
+**) StudentDao.java
+
+package com.spring.jdbc.dao;
+
+import com.spring.jdbc.entities.Student;
+
+public interface StudentDao {
+	public int insert(Student student);
+	public int change(Student student);
+	public int delete(int studentId);
+}
+
+
+
+**) StudentDaoImpl.java
+
+package com.spring.jdbc.dao;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import com.spring.jdbc.entities.Student;
+
+public class StudentDaoImpl implements StudentDao {
+
+	private JdbcTemplate jdbcTemplate;
+
+	// Insert Operation
+	@Override
+	public int insert(Student student) {
+		// Insert Query
+        String query="insert into student(id, name, city) values(?, ?, ?)";
+        int r = this.jdbcTemplate.update(query, student.getId(), student.getName(), student.getCity()); 
+		return r;
+	}
+	
+	// Update Operation
+	@Override
+	public int change(Student student) {
+		// TODO Auto-generated method stub
+		// Updating query
+		String query = "update student set name=?, city=? where id=?"; 
+		int r = this.jdbcTemplate.update(query, student.getName(), student.getCity(), student.getId());
+		return r;
+	}
+	
+	// Delete Operation
+	 @Override
+	    public int delete(int studentId) {
+	        // Delete query
+	        String query = "delete from student where id=?";
+	        int r = this.jdbcTemplate.update(query, studentId);
+	        return r;
+	    }
+
+
+	public JdbcTemplate getJdbcTemplate() {
+		return jdbcTemplate;
+	}
+
+	public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+		this.jdbcTemplate = jdbcTemplate;
+	}
+	
+}
+
+
+3) Third Package com.spring.jdbc.entities
+
+**) Student.java 
+
+package com.spring.jdbc.entities;
+
+public class Student {
+	private int id;
+	private String name;
+	private String city;
+	
+	public Student() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+	
+	public Student(int id, String name, String city) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.city = city;
+	}
+	
+	public int getId() {
+		return id;
+	}
+	public void setId(int id) {
+		this.id = id;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public String getCity() {
+		return city;
+	}
+	public void setCity(String city) {
+		this.city = city;
+	}
+
+	@Override
+	public String toString() {
+		return "Student [id=" + id + ", name=" + name + ", city=" + city + "]";
+	}
+}
+
+
+***********************************************************************************************************************************
+	
+Row Mapper
+
+- It converts the resultset into objects
+- Fetching single Object
+- CRUD performed
+
+
+1) First Package com.spring.jdbc
+
+**) App.java
+
+package com.spring.jdbc;
+import java.util.List;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.jdbc.core.JdbcTemplate;
+import com.spring.jdbc.dao.StudentDao;
+import com.spring.jdbc.entities.Student; 
+/*
+ * 
+ * Everytime Enter Some new Name otherwise it will prompt an error 
+ * Hello world!
+ */
+public class App 
+{
+    public static void main( String[] args )
+    {
+        System.out.println( "My Program Started.........." );
+        // spring jdbc => JDBC Template
+        ApplicationContext context = new ClassPathXmlApplicationContext("com/spring/jdbc/config.xml");
+        StudentDao studentDao = context.getBean("studentDao",StudentDao.class);
+        
+        
+//        // Insert   
+//        Student student = new Student();
+//        student.setId(147);
+//        student.setName("Aditya Lathiya");
+//        student.setCity("Amreli");       
+//        
+//        int result = studentDao.insert(student);
+//        System.out.println("student added " + result);
+
+        
+//        // Update
+//        Student student = new Student();
+//        student.setId(466);
+//        student.setName("Vasif Peerji");
+//        student.setCity("Jamnagar");
+//        
+//        int result = studentDao.change(student);
+//        System.out.println("Data Changed " + result);
+
+    
+//        // Delete 
+//        int result = studentDao.delete(147);
+//        System.out.println("Data Deleted: " + result);
+//      
+        
+        
+//		  Selecting single Student         
+//        Student student = studentDao.getStudent(666);
+//        System.out.println(student);  // This will print the student details if found
+
+    
+//        Selecting Multiple Student
+        List<Student> students = studentDao.getAllStudents();
+        for (Student s:students)
+        {
+        	System.out.println(s);
+        }
+        
+     }
+}
+
+
+
+
+
+**) config.xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:c="http://www.springframework.org/schema/c"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!-- Updated DataSource Bean with the new driver class -->
+    <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource" name="ds">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"></property> <!-- Updated driver class -->
+        <property name="url" value="jdbc:mysql://localhost:3306/springjdbc?serverTimezone=UTC"></property> <!-- Added timezone parameter -->
+        <property name="username" value="root"></property>
+        <property name="password" value="root"></property>
+    </bean>
+    
+    <bean class="org.springframework.jdbc.core.JdbcTemplate" name="jdbcTemplate">
+        <property name="dataSource">
+            <ref bean="ds" />
+        </property>
+    </bean>
+    
+    <bean class="com.spring.jdbc.dao.StudentDaoImpl" name="studentDao">
+        <!-- Corrected ref attribute -->
+        <property name="jdbcTemplate" ref="jdbcTemplate" /> 
+    </bean>
+    
+</beans>
+
+
+
+
+2) Second Package com.spring.jdbc.dao
+
+**) StudentDao.java
+
+package com.spring.jdbc.dao;
+
+import java.util.List;
+
+import com.spring.jdbc.entities.Student;
+
+public interface StudentDao {
+	public int insert(Student student);
+	public int change(Student student);
+	public int delete(int studentId);
+	public Student getStudent(int StudentId);
+	public List<Student> getAllStudents();
+}
+
+
+
+**) StudentDaoImpl.java
+
+package com.spring.jdbc.dao;
+
+import java.util.List;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;  // Correct import
+import com.spring.jdbc.entities.Student;
+
+public class StudentDaoImpl implements StudentDao {
+
+    private JdbcTemplate jdbcTemplate;
+
+    // Insert Operation
+    @Override
+    public int insert(Student student) {
+        // Insert Query
+        String query = "insert into student(id, name, city) values(?, ?, ?)";
+        int r = this.jdbcTemplate.update(query, student.getId(), student.getName(), student.getCity());
+        return r;
+    }
+
+    // Update Operation
+    @Override
+    public int change(Student student) {
+        // Updating query
+        String query = "update student set name=?, city=? where id=?";
+        int r = this.jdbcTemplate.update(query, student.getName(), student.getCity(), student.getId());
+        return r;
+    }
+
+    // Delete Operation
+    public int delete(int studentId) {
+        // Delete query
+        String query = "delete from student where id=?";
+        int r = this.jdbcTemplate.update(query, studentId);
+        return r;
+    }
+
+    // Get Student Operation
+    @Override
+    public Student getStudent(int studentId) {
+        // Query
+        String query = "select * from student where id=?";
+        RowMapper<Student> rowMapper = new RowMapperImpl();  // Correct usage
+        Student student = this.jdbcTemplate.queryForObject(query, rowMapper, studentId);
+        return student;
+    }
+
+    
+    // Selecting Multiple Students
+    @Override
+	public List<Student> getAllStudents() {
+		// TODO Auto-generated method stub
+		String query = "select * from student";
+		List<Student> students = this.jdbcTemplate.query(query, new RowMapperImpl());
+    	return students;
+	}
+    
+    public JdbcTemplate getJdbcTemplate() {
+        return jdbcTemplate;
+    }
+
+    public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+	
+}
+
+
+**) RowMapperImpl.java
+
+package com.spring.jdbc.dao;
+
+package com.spring.jdbc.dao;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import org.springframework.jdbc.core.RowMapper;  // Correct import
+import com.spring.jdbc.entities.Student;
+
+public class RowMapperImpl implements RowMapper<Student> {  // Make RowMapper generic
+
+    @Override
+    public Student mapRow(ResultSet rs, int rowNum) throws SQLException {
+        Student student = new Student();
+        student.setId(rs.getInt(1));
+        student.setName(rs.getString(2));
+        student.setCity(rs.getString(3));
+        return student;  // Return the populated student object
+    }
+}
+
+
+3) Third Package com.spring.jdbc.entities
+
+**) Student.java 
+
+package com.spring.jdbc.entities;
+
+public class Student {
+	private int id;
+	private String name;
+	private String city;
+	
+	public Student() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+	
+	public Student(int id, String name, String city) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.city = city;
+	}
+	
+	public int getId() {
+		return id;
+	}
+	public void setId(int id) {
+		this.id = id;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public String getCity() {
+		return city;
+	}
+	public void setCity(String city) {
+		this.city = city;
+	}
+
+	@Override
+	public String toString() {
+		return "Student [id=" + id + ", name=" + name + ", city=" + city + "]";
+	}
+}
+
+
+
+
+***********************************************************************************************************************************
